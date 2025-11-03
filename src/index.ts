@@ -3,8 +3,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
+    InitializeRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { getCachedPluglist, getCacheStatus, clearPluglistCache, findPluginLatestVersion } from './pluginClient.js';
+import { getCachedPluglist, getCacheStatus, clearPluglistCache, findPluginLatestVersion, setCacheDir } from './pluginClient.js';
 
 class MoodlePluginMCPServer {
     private server: Server;
@@ -24,6 +25,7 @@ class MoodlePluginMCPServer {
 
         this.setupToolHandlers();
         this.setupErrorHandler();
+        this.setupInitializeHandler();
     }
 
     private setupToolHandlers() {
@@ -33,7 +35,7 @@ class MoodlePluginMCPServer {
                 tools: [
                     {
                         name: 'get_raw_pluglist',
-                        description: 'Fetch raw XML data from Moodle plugin database API (with caching)',
+                        description: 'Fetch raw JSON data from Moodle plugin database API (with caching)',
                         inputSchema: {
                             type: 'object',
                             properties: {},
@@ -162,7 +164,7 @@ class MoodlePluginMCPServer {
                     }
 
                     case 'get_cache_status': {
-                        const status = getCacheStatus();
+                        const status = await getCacheStatus();
                         const ageMinutes = status.age ? Math.round(status.age / (1000 * 60)) : 0;
                         const ttlMinutes = Math.round(status.ttl / (1000 * 60));
 
@@ -185,7 +187,7 @@ class MoodlePluginMCPServer {
                     }
 
                     case 'clear_cache': {
-                        clearPluglistCache();
+                        await clearPluglistCache();
                         return {
                             content: [
                                 {
@@ -218,6 +220,34 @@ class MoodlePluginMCPServer {
         this.server.onerror = (error) => {
             console.error('[MCP Error]:', error);
         };
+    }
+
+    private setupInitializeHandler() {
+        this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+            const settings = (request.params?.initializationOptions as any)?.settings;
+            if (settings?.cacheDir) {
+                setCacheDir(settings.cacheDir);
+            }
+            return {
+                protocolVersion: '2024-11-05',
+                capabilities: {
+                    tools: {},
+                    settings: {
+                        type: 'object',
+                        properties: {
+                            cacheDir: {
+                                type: 'string',
+                                description: 'Directory to store cache files (defaults to temp directory)'
+                            }
+                        }
+                    }
+                },
+                serverInfo: {
+                    name: 'moodle-plugin-db-mcp',
+                    version: '0.1.0',
+                },
+            };
+        });
     }
 
     async run() {

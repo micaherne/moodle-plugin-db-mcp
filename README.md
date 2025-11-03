@@ -7,8 +7,8 @@ https://download.moodle.org/api/1.3/pluglist.php
 ## What this provides
 
 - **Proper MCP Server**: Built with `@modelcontextprotocol/sdk`
-- **Tools**: 
-  - `get_raw_pluglist`: Fetch raw XML data from Moodle plugin database
+- **Tools**:
+  - `get_raw_pluglist`: Fetch raw JSON data from Moodle plugin database
   - `find_plugin_latest_version`: Find latest version compatible with specific Moodle version (placeholder)
 - **Browser Testing**: MCP Inspector integration for interactive testing
 - **stdio Transport**: Compatible with Claude Desktop and other MCP clients
@@ -44,8 +44,9 @@ npm run inspector:dev
 ```
 
 This will:
+
 1. Build the TypeScript code
-2. Launch the MCP Inspector 
+2. Launch the MCP Inspector
 3. Open your browser to an interactive testing interface (auto-forwarded in Codespaces)
 4. Show you all available tools and let you test them
 
@@ -100,7 +101,7 @@ This repository is configured for GitHub Codespaces with:
 
 ## Next Steps (Implementation TODOs)
 
-- Parse the pluglist XML response into typed structures
+- Parse the pluglist JSON response into typed structures
 - Implement real logic for `find_plugin_latest_version` tool
 - Add caching layer for the pluglist data
 - Add more sophisticated plugin search and filtering tools

@@ -1,13 +1,15 @@
 import fetch from 'node-fetch';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
-const PLUGLIST_URL = 'https://download.moodle.org/api/1.3/pluglist.php';
+let CACHE_DIR = path.join(os.tmpdir(), 'mcp-moodle-cache');
 
 // Cache configuration
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour in milliseconds
 
-interface CacheEntry {
-    data: string;
-    timestamp: number;
+export function setCacheDir(dir: string): void {
+    CACHE_DIR = dir;
 }
 
 interface MoodleVersion {
@@ -47,41 +49,44 @@ interface PluginListResponse {
     plugins: Plugin[];
 }
 
-let pluglistCache: CacheEntry | null = null;
-
 export async function fetchPluglistRaw(): Promise<string> {
-    // This returns raw text from the pluglist API. The API historically returns XML.
-    // Parsing into structured types will be implemented later.
-    const res = await fetch(PLUGLIST_URL);
-    if (!res.ok) throw new Error(`Failed to fetch pluglist: ${res.status}`);
+    // This returns raw JSON data from the pluglist API.
+    const url = `https://download.moodle.org/api/1.3/pluglist.php`;
+    const res = await fetch(url);
     return await res.text();
 }
 
 export async function getCachedPluglist(): Promise<string> {
+    const cacheFile = path.join(CACHE_DIR, 'pluglist.json');
     const now = Date.now();
 
-    // Check if we have valid cached data
-    if (pluglistCache && (now - pluglistCache.timestamp) < CACHE_TTL_MS) {
-        console.error('[Cache] Using cached pluglist data');
-        return pluglistCache.data;
+    try {
+        // Check if cache file exists and is fresh
+        const stat = await fs.promises.stat(cacheFile);
+        if ((now - stat.mtime.getTime()) < CACHE_TTL_MS) {
+            console.error('[Cache] Using cached pluglist data from file');
+            return await fs.promises.readFile(cacheFile, 'utf-8');
+        }
+    } catch (error) {
+        // File doesn't exist or can't be read, will fetch fresh
     }
 
     // Cache is stale or doesn't exist, fetch fresh data
     console.error('[Cache] Fetching fresh pluglist data');
     try {
         const freshData = await fetchPluglistRaw();
-        pluglistCache = {
-            data: freshData,
-            timestamp: now
-        };
+        // Ensure cache dir exists
+        await fs.promises.mkdir(CACHE_DIR, { recursive: true });
+        await fs.promises.writeFile(cacheFile, freshData, 'utf-8');
         return freshData;
-    } catch (error) {
-        // If fetch fails and we have stale cache, use it as fallback
-        if (pluglistCache) {
-            console.error('[Cache] Fetch failed, using stale cached data as fallback');
-            return pluglistCache.data;
+    } catch (fetchError) {
+        // If fetch fails, try to use stale cache file as fallback
+        try {
+            console.error('[Cache] Fetch failed, using stale cached file as fallback');
+            return await fs.promises.readFile(cacheFile, 'utf-8');
+        } catch (fileError) {
+            throw fetchError; // Re-throw fetch error if no cache available
         }
-        throw error; // Re-throw if no cache available
     }
 }
 
@@ -154,17 +159,31 @@ export async function findPluginLatestVersion(
 }
 
 // Utility function to clear cache (useful for testing or manual refresh)
-export function clearPluglistCache(): void {
-    pluglistCache = null;
-    console.error('[Cache] Pluglist cache cleared');
+export async function clearPluglistCache(): Promise<void> {
+    const cacheFile = path.join(CACHE_DIR, 'pluglist.json');
+    try {
+        await fs.promises.unlink(cacheFile);
+        console.error('[Cache] Pluglist cache file cleared');
+    } catch (error) {
+        console.error('[Cache] Failed to clear cache file:', error);
+    }
 }
 
 // Utility function to get cache status
-export function getCacheStatus(): { hasCache: boolean; age?: number; ttl: number } {
+export async function getCacheStatus(): Promise<{ hasCache: boolean; age?: number; ttl: number }> {
+    const cacheFile = path.join(CACHE_DIR, 'pluglist.json');
     const now = Date.now();
-    return {
-        hasCache: pluglistCache !== null,
-        age: pluglistCache ? now - pluglistCache.timestamp : undefined,
-        ttl: CACHE_TTL_MS
-    };
+    try {
+        const stat = await fs.promises.stat(cacheFile);
+        return {
+            hasCache: true,
+            age: now - stat.mtime.getTime(),
+            ttl: CACHE_TTL_MS
+        };
+    } catch (error) {
+        return {
+            hasCache: false,
+            ttl: CACHE_TTL_MS
+        };
+    }
 }
