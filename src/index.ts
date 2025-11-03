@@ -4,7 +4,7 @@ import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { getCachedPluglist } from './pluginClient.js';
+import { getCachedPluglist, getCacheStatus, clearPluglistCache, findPluginLatestVersion } from './pluginClient.js';
 
 class MoodlePluginMCPServer {
     private server: Server;
@@ -33,7 +33,7 @@ class MoodlePluginMCPServer {
                 tools: [
                     {
                         name: 'get_raw_pluglist',
-                        description: 'Fetch raw XML data from Moodle plugin database API',
+                        description: 'Fetch raw XML data from Moodle plugin database API (with caching)',
                         inputSchema: {
                             type: 'object',
                             properties: {},
@@ -42,20 +42,37 @@ class MoodlePluginMCPServer {
                     },
                     {
                         name: 'find_plugin_latest_version',
-                        description: 'Find the latest version of a plugin compatible with a specific Moodle version (placeholder)',
+                        description: 'Find the latest version of a plugin compatible with a specific Moodle version (by numeric version or release name)',
                         inputSchema: {
                             type: 'object',
                             properties: {
                                 plugin_name: {
                                     type: 'string',
-                                    description: 'Name of the plugin (e.g., plagiarism_turnitin)',
+                                    description: 'Name of the plugin component (e.g., mod_attendance)',
                                 },
                                 moodle_version: {
+                                    type: 'number',
+                                    description: 'Moodle version number (e.g., 2022111500 for Moodle 4.1)',
+                                },
+                                moodle_release: {
                                     type: 'string',
-                                    description: 'Moodle version (e.g., 4.5)',
+                                    description: 'Moodle release name (e.g., "4.1", "4.2")',
                                 },
                             },
                             required: ['plugin_name'],
+                            oneOf: [
+                                { required: ['moodle_version'] },
+                                { required: ['moodle_release'] }
+                            ]
+                        },
+                    },
+                    {
+                        name: 'get_cache_status',
+                        description: 'Get information about the current cache status',
+                        inputSchema: {
+                            type: 'object',
+                            properties: {},
+                            required: [],
                         },
                     },
                 ],
@@ -82,18 +99,79 @@ class MoodlePluginMCPServer {
 
                     case 'find_plugin_latest_version': {
                         const pluginName = args?.plugin_name as string;
-                        const moodleVersion = args?.moodle_version as string;
+                        const moodleVersion = args?.moodle_version as number;
+                        const moodleRelease = args?.moodle_release as string;
 
                         if (!pluginName) {
                             throw new Error('plugin_name is required');
                         }
 
-                        // TODO: Implement actual parsing and version finding logic
+                        const result = await findPluginLatestVersion(pluginName, moodleVersion, moodleRelease);
+
+                        if (!result) {
+                            return {
+                                content: [
+                                    {
+                                        type: 'text',
+                                        text: `Plugin "${pluginName}" not found or no compatible version available for the specified Moodle version.`,
+                                    },
+                                ],
+                            };
+                        }
+
+                        const { plugin, latestVersion, moodleTarget } = result;
+                        const targetDesc = moodleTarget.version
+                            ? `version ${moodleTarget.version}`
+                            : `release "${moodleTarget.release}"`;
+
+                        const response = {
+                            plugin_name: plugin.component,
+                            plugin_display_name: plugin.name,
+                            moodle_target: targetDesc,
+                            latest_version: {
+                                version: latestVersion.version,
+                                release: latestVersion.release,
+                                maturity: latestVersion.maturity,
+                                maturity_text: latestVersion.maturity === 200 ? 'Stable' :
+                                             latestVersion.maturity === 100 ? 'Beta' :
+                                             latestVersion.maturity === 50 ? 'Alpha' : 'Unknown',
+                                download_url: latestVersion.downloadurl,
+                                download_md5: latestVersion.downloadmd5,
+                                release_date: new Date(latestVersion.timecreated * 1000).toISOString(),
+                                supported_moodle_versions: latestVersion.supportedmoodles.map(m => ({
+                                    version: m.version,
+                                    release: m.release
+                                }))
+                            },
+                            plugin_info: {
+                                source_url: plugin.source,
+                                documentation_url: plugin.doc || null,
+                                bugs_url: plugin.bugs,
+                                discussion_url: plugin.discussion
+                            }
+                        };
+
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: JSON.stringify(response, null, 2),
+                                },
+                            ],
+                        };
+                    }
+
+                    case 'get_cache_status': {
+                        const status = getCacheStatus();
+                        const ageMinutes = status.age ? Math.round(status.age / (1000 * 60)) : 0;
+                        const ttlMinutes = Math.round(status.ttl / (1000 * 60));
+
                         const result = {
-                            plugin: pluginName,
-                            moodle_version: moodleVersion || 'any',
-                            status: 'placeholder',
-                            message: 'This is a placeholder implementation. Real logic will parse the pluglist XML and find the latest compatible version.',
+                            has_cache: status.hasCache,
+                            cache_age_minutes: ageMinutes,
+                            cache_ttl_minutes: ttlMinutes,
+                            is_cache_valid: status.hasCache && status.age! < status.ttl,
+                            next_refresh_in_minutes: status.hasCache ? Math.max(0, ttlMinutes - ageMinutes) : 0
                         };
 
                         return {
@@ -101,6 +179,18 @@ class MoodlePluginMCPServer {
                                 {
                                     type: 'text',
                                     text: JSON.stringify(result, null, 2),
+                                },
+                            ],
+                        };
+                    }
+
+                    case 'clear_cache': {
+                        clearPluglistCache();
+                        return {
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: 'Cache cleared successfully. Next request will fetch fresh data.',
                                 },
                             ],
                         };
