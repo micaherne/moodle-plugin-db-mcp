@@ -99,13 +99,21 @@ This repository is configured for GitHub Codespaces with:
 - **Port 6274**: MCP Inspector UI (auto-opens in browser)
 - **Port 6277**: MCP Inspector Proxy (background service)
 
-## Next Steps (Implementation TODOs)
+## Completed Features
 
-- Parse the pluglist JSON response into typed structures
-- Implement real logic for `find_plugin_latest_version` tool
-- Add caching layer for the pluglist data
-- Add more sophisticated plugin search and filtering tools
-- Add error handling and input validation
+- ✅ Parse the pluglist JSON response into typed structures
+- ✅ Implement real logic for `find_plugin_latest_version` tool with Moodle version/release filtering
+- ✅ Add filesystem caching layer for the pluglist data (1-hour TTL with fallback)
+- ✅ Basic error handling and input validation
+- ✅ MCP settings support for configurable cache directory
+
+## Future Enhancements
+
+- Add more plugin search and filtering tools (e.g., search by category, author)
+- Support for API version configuration (when Moodle releases API 1.4)
+- Performance optimizations for large plugin lists
+- Additional plugin metadata parsing and display
+- Rate limiting and retry logic for API calls
 
 ## Contributing
 
