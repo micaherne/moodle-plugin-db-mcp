@@ -23,6 +23,8 @@ Install dependencies:
 npm install
 ```
 
+**Note for Windows users**: If you encounter `'tsc' is not recognized` errors, ensure you've run `npm install` and try using `npm run build` instead of running `tsc` directly. TypeScript is installed as a local dependency.
+
 ### GitHub Codespaces (Recommended)
 
 The easiest way to get started is using GitHub Codespaces:
