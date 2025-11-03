@@ -1,0 +1,28 @@
+{
+    "name": "moodle-plugin-db-mcp",
+    "version": "0.1.0",
+    "description": "MCP server scaffold to query Moodle plugin DB (pluglist.php)",
+    "type": "module",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
+        "inspector:dev": "npm run build && npm run inspector",
+        "lint": "echo 'no linter configured'"
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^0.6.0",
+        "node-fetch": "^2.6.7"
+    },
+    "devDependencies": {
+        "typescript": "^5.5.0",
+        "ts-node-dev": "^2.0.0",
+        "@types/node": "^20.5.9",
+        "@types/express": "^4.17.21",
+        "@types/node-fetch": "^2.6.4"
+    }
+}
