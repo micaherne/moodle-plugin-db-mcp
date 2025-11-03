@@ -44,7 +44,7 @@ class MoodlePluginMCPServer {
                     },
                     {
                         name: 'find_plugin_latest_version',
-                        description: 'Find the latest version of a plugin compatible with a specific Moodle version (by numeric version or release name)',
+                        description: 'Find the latest version of a plugin compatible with a specific Moodle version or release. Provide either moodle_version (numeric) OR moodle_release (string), not both.',
                         inputSchema: {
                             type: 'object',
                             properties: {
@@ -54,18 +54,14 @@ class MoodlePluginMCPServer {
                                 },
                                 moodle_version: {
                                     type: 'number',
-                                    description: 'Moodle version number (e.g., 2022111500 for Moodle 4.1)',
+                                    description: 'Moodle version number (e.g., 2022111500 for Moodle 4.1). Optional - provide either this OR moodle_release.',
                                 },
                                 moodle_release: {
                                     type: 'string',
-                                    description: 'Moodle release name (e.g., "4.1", "4.2")',
+                                    description: 'Moodle release name (e.g., "4.1", "4.2"). Optional - provide either this OR moodle_version.',
                                 },
                             },
                             required: ['plugin_name'],
-                            oneOf: [
-                                { required: ['moodle_version'] },
-                                { required: ['moodle_release'] }
-                            ]
                         },
                     },
                     {
@@ -106,6 +102,18 @@ class MoodlePluginMCPServer {
 
                         if (!pluginName) {
                             throw new Error('plugin_name is required');
+                        }
+
+                        // Validate that exactly one of moodle_version or moodle_release is provided
+                        const hasVersion = moodleVersion !== undefined;
+                        const hasRelease = moodleRelease !== undefined;
+
+                        if (!hasVersion && !hasRelease) {
+                            throw new Error('Either moodle_version or moodle_release must be provided');
+                        }
+
+                        if (hasVersion && hasRelease) {
+                            throw new Error('Cannot specify both moodle_version and moodle_release - provide only one');
                         }
 
                         const result = await findPluginLatestVersion(pluginName, moodleVersion, moodleRelease);
