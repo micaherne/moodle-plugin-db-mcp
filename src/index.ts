@@ -43,8 +43,8 @@ class MoodlePluginMCPServer {
                         },
                     },
                     {
-                        name: 'find_plugin_latest_version',
-                        description: 'Find the latest version of a plugin compatible with a specific Moodle version or release. Provide either moodle_version (numeric) OR moodle_release (string), not both.',
+                        name: 'find_latest_plugin_version',
+                        description: 'Find the latest version of a plugin compatible with a Moodle version or release',
                         inputSchema: {
                             type: 'object',
                             properties: {
@@ -52,16 +52,12 @@ class MoodlePluginMCPServer {
                                     type: 'string',
                                     description: 'Name of the plugin component (e.g., mod_attendance)',
                                 },
-                                moodle_version: {
-                                    type: 'number',
-                                    description: 'Moodle version number (e.g., 2022111500 for Moodle 4.1). Optional - provide either this OR moodle_release.',
-                                },
-                                moodle_release: {
+                                moodle_identifier: {
                                     type: 'string',
-                                    description: 'Moodle release name (e.g., "4.1", "4.2"). Optional - provide either this OR moodle_version.',
+                                    description: 'Moodle identifier: 10-digit version number (e.g., "2022111500") or major release (e.g., "4.1")',
                                 },
                             },
-                            required: ['plugin_name'],
+                            required: ['plugin_name', 'moodle_identifier'],
                         },
                     },
                     {
@@ -95,25 +91,29 @@ class MoodlePluginMCPServer {
                         };
                     }
 
-                    case 'find_plugin_latest_version': {
+                    case 'find_latest_plugin_version': {
                         const pluginName = args?.plugin_name as string;
-                        const moodleVersion = args?.moodle_version as number;
-                        const moodleRelease = args?.moodle_release as string;
+                        const moodleIdentifier = args?.moodle_identifier as string;
 
-                        if (!pluginName) {
-                            throw new Error('plugin_name is required');
+                        if (!pluginName || !moodleIdentifier) {
+                            throw new Error('plugin_name and moodle_identifier are required');
                         }
 
-                        // Validate that exactly one of moodle_version or moodle_release is provided
-                        const hasVersion = moodleVersion !== undefined;
-                        const hasRelease = moodleRelease !== undefined;
+                        // Parse the moodle_identifier
+                        let moodleVersion: number | undefined;
+                        let moodleRelease: string | undefined;
+                        let targetDesc: string;
 
-                        if (!hasVersion && !hasRelease) {
-                            throw new Error('Either moodle_version or moodle_release must be provided');
-                        }
-
-                        if (hasVersion && hasRelease) {
-                            throw new Error('Cannot specify both moodle_version and moodle_release - provide only one');
+                        if (/^\d{10}$/.test(moodleIdentifier)) {
+                            // 10-digit version number
+                            moodleVersion = parseInt(moodleIdentifier, 10);
+                            targetDesc = `version ${moodleVersion}`;
+                        } else if (/^\d+\.\d+$/.test(moodleIdentifier)) {
+                            // Major release format
+                            moodleRelease = moodleIdentifier;
+                            targetDesc = `release "${moodleRelease}"`;
+                        } else {
+                            throw new Error('Invalid moodle_identifier format. Expected 10-digit version number or major release (e.g., "4.1").');
                         }
 
                         const result = await findPluginLatestVersion(pluginName, moodleVersion, moodleRelease);
@@ -123,16 +123,13 @@ class MoodlePluginMCPServer {
                                 content: [
                                     {
                                         type: 'text',
-                                        text: `Plugin "${pluginName}" not found or no compatible version available for the specified Moodle version.`,
+                                        text: `Plugin "${pluginName}" not found or no compatible version available for Moodle ${targetDesc}.`,
                                     },
                                 ],
                             };
                         }
 
-                        const { plugin, latestVersion, moodleTarget } = result;
-                        const targetDesc = moodleTarget.version
-                            ? `version ${moodleTarget.version}`
-                            : `release "${moodleTarget.release}"`;
+                        const { plugin, latestVersion } = result;
 
                         const response = {
                             plugin_name: plugin.component,
