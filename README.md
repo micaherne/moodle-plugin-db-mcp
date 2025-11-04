@@ -7,11 +7,16 @@ https://download.moodle.org/api/1.3/pluglist.php
 ## What this provides
 
 - **Proper MCP Server**: Built with `@modelcontextprotocol/sdk`
-- **Tools**:
-  - `get_raw_pluglist`: Fetch raw JSON data from Moodle plugin database
-  - `find_plugin_latest_version`: Find latest version compatible with specific Moodle version
 - **Browser Testing**: MCP Inspector integration for interactive testing
 - **stdio Transport**: Compatible with Claude Desktop and other MCP clients
+
+## Available Tools
+
+| Tool                         | Description                                                                     | Parameters                                                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_raw_pluglist`           | Fetch raw JSON data from Moodle plugin database API (with caching)              | None                                                                                                                                                                                                          |
+| `find_latest_plugin_version` | Find the latest version of a plugin compatible with a Moodle version or release | `plugin_name` (string): Name of the plugin component (e.g., mod_attendance)<br>`moodle_identifier` (string): Moodle identifier as 10-digit version number (e.g., "2022111500") or major release (e.g., "4.1") |
+| `get_cache_status`           | Get information about the current cache status                                  | None                                                                                                                                                                                                          |
 
 ## Quick Start
 
