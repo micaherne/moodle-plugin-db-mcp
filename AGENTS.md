@@ -61,3 +61,7 @@ This ~14MB JSON file contains all plugin data and can be used for offline develo
 ### Changed
 - Improved caching mechanism for API responses
 ```
+
+## Repository Management
+
+**CRITICAL**: Never push commits to the repository without explicit user instruction. Always wait for the user to specifically request a push operation before executing `git push`. This prevents accidental pushes of incomplete or unwanted changes.
