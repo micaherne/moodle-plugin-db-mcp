@@ -9,7 +9,7 @@ https://download.moodle.org/api/1.3/pluglist.php
 - **Proper MCP Server**: Built with `@modelcontextprotocol/sdk`
 - **Tools**:
   - `get_raw_pluglist`: Fetch raw JSON data from Moodle plugin database
-  - `find_plugin_latest_version`: Find latest version compatible with specific Moodle version (placeholder)
+  - `find_plugin_latest_version`: Find latest version compatible with specific Moodle version
 - **Browser Testing**: MCP Inspector integration for interactive testing
 - **stdio Transport**: Compatible with Claude Desktop and other MCP clients
 
@@ -22,8 +22,6 @@ Install dependencies:
 ```bash
 npm install
 ```
-
-**Note for Windows users**: If you encounter `'tsc' is not recognized` errors, ensure you've run `npm install` and try using `npm run build` instead of running `tsc` directly. TypeScript is installed as a local dependency.
 
 ### GitHub Codespaces (Recommended)
 
