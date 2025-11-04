@@ -4,3 +4,7 @@ dist/
 .vscode/
 .idea/
 npm-debug.log
+
+# Local plugin data files
+pluglist.json
+pluglist_full.json
