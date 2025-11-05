@@ -123,14 +123,6 @@ This repository is configured for GitHub Codespaces with:
 - ✅ Basic error handling and input validation
 - ✅ MCP settings support for configurable cache directory
 
-## Future Enhancements
-
-- Add more plugin search and filtering tools (e.g., search by category, author)
-- Support for API version configuration (when Moodle releases API 1.4)
-- Performance optimizations for large plugin lists
-- Additional plugin metadata parsing and display
-- Rate limiting and retry logic for API calls
-
 ## Contributing
 
 1. Fork this repository
