@@ -5,7 +5,7 @@ import {
     ListToolsRequestSchema,
     InitializeRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { getCachedPluglist, getCacheStatus, clearPluglistCache, findPluginLatestVersion, setCacheDir } from './pluginClient.js';
+import { getCachedPluglist, getCacheStatus, clearPluglistCache, findPluginLatestVersion } from './pluginClient.js';
 
 class MoodlePluginMCPServer {
     private server: Server;
@@ -229,23 +229,10 @@ class MoodlePluginMCPServer {
 
     private setupInitializeHandler() {
         this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
-            const settings = (request.params?.initializationOptions as any)?.settings;
-            if (settings?.cacheDir) {
-                setCacheDir(settings.cacheDir);
-            }
             return {
                 protocolVersion: '2024-11-05',
                 capabilities: {
                     tools: {},
-                    settings: {
-                        type: 'object',
-                        properties: {
-                            cacheDir: {
-                                type: 'string',
-                                description: 'Directory to store cache files (defaults to temp directory)'
-                            }
-                        }
-                    }
                 },
                 serverInfo: {
                     name: 'moodle-plugin-db-mcp',

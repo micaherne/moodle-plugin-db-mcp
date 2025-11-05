@@ -32,6 +32,14 @@ curl -sSfL "https://download.moodle.org/api/1.3/pluglist.php" -o pluglist.json
 
 This ~14MB JSON file contains all plugin data and can be used for offline development. The current implementation uses filesystem caching for individual API responses, but storing the full dataset locally would eliminate upstream API dependencies entirely.
 
+The cache directory can be configured using the `CACHE_DIR` environment variable:
+
+```bash
+CACHE_DIR=/path/to/cache npm start
+```
+
+If not set, it defaults to the system temp directory.
+
 ## Changelog Maintenance
 
 **IMPORTANT**: Every commit must have a corresponding entry in CHANGELOG.md following the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.

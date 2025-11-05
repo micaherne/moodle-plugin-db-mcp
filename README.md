@@ -72,10 +72,8 @@ Add this to your Claude Desktop configuration (`~/Library/Application Support/Cl
     "moodle-plugin-db": {
       "command": "node",
       "args": ["/absolute/path/to/moodle-plugin-db-mcp/dist/index.js"],
-      "initializationOptions": {
-        "settings": {
-          "cacheDir": "/path/to/your/cache/directory"
-        }
+      "env": {
+        "CACHE_DIR": "/path/to/your/cache/directory"
       }
     }
   }
@@ -86,8 +84,8 @@ Add this to your Claude Desktop configuration (`~/Library/Application Support/Cl
 
 The server supports the following configuration options:
 
-- **`cacheDir`** (MCP setting): Directory to store cached plugin data (defaults to system temp directory)
-  - Example: `"cacheDir": "/Users/username/.cache/moodle-plugins"`
+- **`CACHE_DIR`** (environment variable): Directory to store cached plugin data (defaults to system temp directory)
+  - Example: `CACHE_DIR=/Users/username/.cache/moodle-plugins npm start`
   - The cache uses a 1-hour TTL with automatic fallback to fresh data if needed
 
 Then restart Claude Desktop and you'll see the tools available in the interface.

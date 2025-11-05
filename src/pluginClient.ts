@@ -3,14 +3,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-let CACHE_DIR = path.join(os.tmpdir(), 'mcp-moodle-cache');
+// Cache configuration - read from environment variable or default to temp directory
+const CACHE_DIR = process.env.CACHE_DIR || path.join(os.tmpdir(), 'mcp-moodle-cache');
 
 // Cache configuration
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour in milliseconds
 
-export function setCacheDir(dir: string): void {
-    CACHE_DIR = dir;
-}
+// Removed setCacheDir function - now uses environment variable
 
 interface MoodleVersion {
     version: number;
